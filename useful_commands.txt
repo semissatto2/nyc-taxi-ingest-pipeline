@@ -1,0 +1,33 @@
+# requirements
+install docker to ingest
+install anaconda to data exploratory
+
+# useful commands
+
+# rung postgres database + pgadmin from docker-compose
+docker-compose up
+
+# connect postgres to ensure everything is running
+pgcli -h localhost -p 5432 -u root -d ny_taxi
+
+# inside postgres you can
+\dt # list all tables inside postgres
+
+# build docker image
+docker build -t python-ingest .
+
+# create the network
+docker network create mynetwork
+
+# connect container to network
+docker network connect mynetwork nyc-taxi-pgdatabase
+
+# run ingest script
+docker run -it --network=mynetwork python-ingest `
+    --user=root `
+    --password=root `
+    --host=nyc-taxi-pgdatabase `
+    --port=5432 `
+    --db=ny_taxi `
+    --table_name=ny_taxi_trips `
+    --url=https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_2019-10.parquet
