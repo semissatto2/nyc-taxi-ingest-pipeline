@@ -8,11 +8,13 @@ import os
 import requests
 import math
 
+
 def download_file(url, output_file):
+    print(f'Downloading data from {url}')
     response = requests.get(url)
     with open(output_file, 'wb') as file:
         file.write(response.content)
-    print(f"File downloaded as {output_file}")
+    print(f'File downloaded as {output_file}')
 
 def main(params):
     user = params.user
@@ -20,51 +22,57 @@ def main(params):
     host = params.host
     port = params.port
     db = params.db
-    table_name = params.table_name
-    url = params.url
-    file_name = 'output.parquet'
-    csv_name = 'outpout.csv'
+    table_name1 = params.table_name1
+    url1 = params.url1
+    table_name2 = params.table_name2
+    url2 = params.url2
 
     # create engine to connect to postgres
     engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}')
 
-    # download data
-    file_name = "output.parquet"
-    download_file(url, file_name)
-    print('Data downloaded.')
-
+    # download first table - parquet data
+    file_name = 'output.parquet'
+    csv_name = 'outpout.csv'
+    download_file(url1, file_name)
     df = pd.read_parquet(file_name, engine='pyarrow')
-    df.to_csv(csv_name)
-    print(f'Dataframe has {df.shape[0]} rows ')
+    df.to_csv(csv_name, index=False)
+    print(f'Dataframe has {df.shape[0]} rows')
 
     # chunk dataframe
     chunk_size = 100*1e3
     df_iter = pd.read_csv(csv_name, iterator=True, chunksize=chunk_size)
     chunk_count = math.ceil(df.shape[0] / chunk_size)
-    print(f'Total chunks: {chunk_count}')
-
+    
     # create table (only header)
     df = next(df_iter)
-    df = df.drop('Unnamed: 0', axis=1)
-    df.head(n=0).to_sql(name=table_name, con=engine, if_exists='replace')
-    df.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+    df.head(n=0).to_sql(name=table_name1, con=engine, if_exists='replace')
+    df.to_sql(name=table_name1, con=engine, if_exists='replace', index=False)
     
+    # insert table on postgres
     for _ in range(chunk_count):
         t_start = time()
         
         try:
             df = next(df_iter)
         except StopIteration:
-            print("No more data to read, ending ingestion.")
+            print('No more data to read, ending ingestion.')
             break
 
-        if 'Unnamed: 0' in df.columns:
-            df = df.drop('Unnamed: 0', axis=1)
-            
-        df.to_sql(name=table_name, con=engine, if_exists='append', index=False)
+        df.to_sql(name=table_name1, con=engine, if_exists='append', index=False)
         t_end = time()
-        print(f"Inserted another chunk! Took {t_end - t_start} second(s).")
+        print(f'Inserted another chunk! Took {t_end - t_start:.3f} second(s).')
 
+    # download second table - csv data
+    file_name = 'output2.csv'
+    download_file(url2, file_name)
+    df = pd.read_csv(file_name)
+    print(f'Dataframe has {df.shape[0]} rows')
+
+    # insert table on postgres
+    t_start = time()
+    df.to_sql(name=table_name2, con=engine, if_exists='replace', index=False)
+    t_end = time()
+    print(f'Inserted another table! Took {t_end - t_start:.3f} second(s).')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -76,8 +84,10 @@ if __name__ == '__main__':
     parser.add_argument('--host')
     parser.add_argument('--port')
     parser.add_argument('--db')
-    parser.add_argument('--table_name')
-    parser.add_argument('--url')
+    parser.add_argument('--table_name1')
+    parser.add_argument('--url1')
+    parser.add_argument('--table_name2')
+    parser.add_argument('--url2')
 
     args = parser.parse_args()
 

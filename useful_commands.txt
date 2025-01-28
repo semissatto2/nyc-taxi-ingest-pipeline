@@ -2,8 +2,6 @@
 install docker to ingest
 install anaconda to data exploratory
 
-# useful commands
-
 # rung postgres database + pgadmin from docker-compose
 docker-compose up
 
@@ -29,5 +27,7 @@ docker run -it --network=mynetwork python-ingest `
     --host=nyc-taxi-pgdatabase `
     --port=5432 `
     --db=ny_taxi `
-    --table_name=ny_taxi_trips `
-    --url=https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_2019-10.parquet
+    --table_name1=ny_taxi_trips `
+    --url1=https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_2019-10.parquet `
+    --table_name2=ny_taxi_zones `
+    --url2=https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv
