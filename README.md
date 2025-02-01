@@ -88,12 +88,14 @@ List all tables in the database:
 ## Project Structure
 ```
 .
-├── Dockerfile               # Dockerfile to build the ETL image
-├── docker-compose.yaml      # Docker Compose configuration
+├── Dockerfile                  # Dockerfile to build the ETL image
+├── docker-compose.yaml         # Docker Compose configuration
 ├── scripts/
-│   └── ingest.py            # Main ETL script
-├── useful_commands.txt      # Helpful commands for setup and debugging
-└── .gitignore               # Git ignore file
+│   └── ingest.py               # Main ETL script
+├── notebooks/
+│   └── ny_taxis_analysis.ipynb # Analysis data using SQL with Python
+├── useful_commands.txt         # Helpful commands for setup and debugging
+└── .gitignore                  # Git ignore file
 ```
 
 ## Notes
